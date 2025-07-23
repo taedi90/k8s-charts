@@ -1,0 +1,6 @@
+users:
+  - name: "example_user@company.kr"
+    admin: false
+    namespaces:
+      - default
+      - team-dev

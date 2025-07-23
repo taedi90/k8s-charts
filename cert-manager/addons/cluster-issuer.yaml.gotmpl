@@ -1,0 +1,21 @@
+{{- range $issuer := (ds "env").cluster_issuers }}
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: {{ $issuer.name }}
+spec:
+  acme:
+    server: {{ $issuer.server }}
+    email: {{ $issuer.email }}
+    privateKeySecretRef:
+      name: {{ $issuer.name }}
+    skipTLSVerify: true
+{{- if $issuer.solvers }}
+    solvers:
+{{- range $solver := $issuer.solvers }}
+{{- $solversYaml := $issuer.solvers | toYAML | indent 6 }}
+{{ $solversYaml }}
+{{- end }}
+{{- end }}
+---
+{{- end }}

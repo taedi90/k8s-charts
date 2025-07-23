@@ -1,0 +1,31 @@
+helmDefaults:
+  skipDeps: true # skip running "helm repo update" and "helm dependency build"
+---
+
+environments:
+  example:
+    values: 
+    - ./environments/example/values.yaml
+
+---
+releases:
+  - name: otel-collector
+    namespace: otel-collector
+    chart: ./chart
+    historyMax: 3
+    values:
+      - ./chart/values.yaml
+      - ./environments/{{ .Environment.Name }}/values.yaml
+
+    hooks:
+      - events: ["cleanup"]
+        showlogs: true
+        command: sh
+        args:
+          - -c
+          - |
+            # 설치, 업데이트 작업 이후 롤링
+            if [ "$HELMFILE_COMMAND" = "sync" ] || [ "$HELMFILE_COMMAND" = "apply" ]; then
+              echo "Rollout daemonset"
+              kubectl rollout restart -n otel-collector daemonset otel-collector-opentelemetry-collector-agent
+            fi 

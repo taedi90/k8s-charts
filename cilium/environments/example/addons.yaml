@@ -1,0 +1,38 @@
+loadBalancerIpPool: "10.30.0.1/16"
+
+bgpClusterConfigSpec:
+  bgpInstances:
+    - name: "instance-64520"
+      localASN: 64520
+      peers:
+        - name: "peer-64520-fortigate"
+          peerASN: 64520
+          peerAddress: "10.100.0.2"
+          peerConfigRef:
+            name: "cilium-peer"
+  nodeSelector:
+    matchExpressions:
+      - { key: kubernetes.io/os, operator: In, values: ['linux'] }
+
+bgpPeerConfigSpec:
+  gracefulRestart:
+    enabled: true
+    restartTimeSeconds: 15
+  families:
+    - afi: ipv4
+      safi: unicast
+      advertisements:
+        matchLabels:
+          advertise: "bgp"
+
+bgpAdvertisementSpec:
+  advertisements:
+    - advertisementType: "Service"
+      service:
+        addresses:
+          - ClusterIP
+          - ExternalIP
+          - LoadBalancerIP
+      selector: {}
+    - advertisementType: "PodCIDR"
+      selector: {}

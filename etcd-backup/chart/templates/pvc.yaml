@@ -1,0 +1,18 @@
+{{- if and .Values.secondBackup.enabled (or (eq .Values.secondBackup.existingClaim "") (eq .Values.secondBackup.existingClaim nil)) }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: etcd-backup-pvc
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: etcd-backup
+spec:
+  accessModes:
+    - {{ .Values.secondBackup.accessMode }}
+  resources:
+    requests:
+      storage: {{ .Values.secondBackup.size }}
+  {{- if .Values.secondBackup.storageClass }}
+  storageClassName: {{ .Values.secondBackup.storageClass }}
+  {{- end }}
+{{- end }}

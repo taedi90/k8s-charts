@@ -1,0 +1,22 @@
+
+cluster_issuers:
+- name: "letsencrypt-staging"
+  server: "https://acme-staging-v02.api.letsencrypt.org/directory"
+  email: "{{ email }}"
+  solvers:
+  - http01:
+      gatewayHTTPRoute:
+        parentRefs:
+        - name: default-gateway   # Gateway 이름
+          namespace: cilium       # Gateway 가 있는 namespace
+        serviceType: ClusterIP    # 또는 LoadBalancer
+- name: "letsencrypt-prod"
+  server: "https://acme-v02.api.letsencrypt.org/directory"
+  email: "{{ email }}"
+  solvers:
+  - http01:
+      gatewayHTTPRoute:
+        parentRefs:
+        - name: default-gateway   # Gateway 이름
+          namespace: cilium       # Gateway 가 있는 namespace
+        serviceType: ClusterIP    # 또는 LoadBalancer

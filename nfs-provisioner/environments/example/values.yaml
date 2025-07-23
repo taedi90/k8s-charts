@@ -1,0 +1,18 @@
+nfs:
+  server: {{ nfs_server }}
+  path: /data/nfs
+  mountOptions:
+    - vers=4.1
+  volumeName: nfs-root
+  # Reclaim policy for the main nfs volume
+  reclaimPolicy: Retain
+
+storageClass:
+  create: true
+  defaultClass: true
+  name: nfs-csi
+  allowVolumeExpansion: true
+  accessModes: ReadWriteMany
+  pathPattern: "${.PVC.namespace}/${.PVC.name}"
+  reclaimPolicy: Delete
+  archiveOnDelete: false

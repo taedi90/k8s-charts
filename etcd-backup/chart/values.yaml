@@ -1,0 +1,35 @@
+schedule: "0 02 * * *"          # KST 02:00 timeZone
+timeZone: "Asia/Seoul"
+successfulJobsHistoryLimit: 1 # job 성공한 건 1개 이력 남김
+failedJobsHistoryLimit: 1 # job 실패 건 이력 관리 안함
+
+image:
+  repository: bitnami/etcd
+  tag: latest
+  pullPolicy: IfNotPresent
+
+# 마스터 노드에 백업 (hostPath)
+backup:
+  hostPath: /data/etcd-backup
+  retentionDays: 5
+
+# pv 에 2차 백업
+secondBackup:
+  enabled: true
+  existingClaim: ""
+  storageClass: "nfs-csi"
+  subPath: ""
+  accessMode: ReadWriteOnce
+  size: 10Gi
+
+
+etcd:
+  endpoints: https://127.0.0.1:2379
+  certs:
+    ca: /etc/kubernetes/pki/etcd/ca.crt
+    cert: /etc/kubernetes/pki/etcd/server.crt
+    key: /etc/kubernetes/pki/etcd/server.key
+    mountPath: /etc/kubernetes/pki/etcd
+    hostPath: /etc/kubernetes/pki/etcd
+
+affinity: {}

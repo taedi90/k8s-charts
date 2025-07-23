@@ -1,0 +1,44 @@
+helmDefaults:
+  skipDeps: true # skip running "helm repo update" and "helm dependency build"
+---
+
+environments:
+  example:
+    values: 
+    - ./environments/example/values.yaml
+
+---
+releases:
+  - name: drone
+    namespace: ci
+    chart: ./chart
+    historyMax: 3
+    values:
+      - ./chart/values.yaml
+      - ./environments/{{ .Environment.Name }}/values.yaml
+
+---
+hooks:
+  - events: ["cleanup"]
+    showlogs: true
+    command: sh
+    args:
+      - -c
+      - |
+        # 설치, 업데이트 작업 이후 동작
+        if [ "$HELMFILE_COMMAND" = "sync" ] || [ "$HELMFILE_COMMAND" = "apply" ]; then
+          echo "Rendering & Applying addons for env: {{ .Environment.Name }}"
+          find ./addons -type f \( -name '*.gotmpl' -o -name '*.yaml.gotmpl' \) | while read f; do
+            echo "Applying $f"
+            gomplate -f "$f" --datasource env=./environments/{{ .Environment.Name }}/addons.yaml | kubectl apply -f -
+          done
+        # 삭제 작업 이후 동작
+        elif [ "$HELMFILE_COMMAND" = "destroy" ]; then
+          echo "Deleting addons for env: {{ .Environment.Name }}"
+          find ./addons -type f \( -name '*.gotmpl' -o -name '*.yaml.gotmpl' \) | while read f; do
+            echo "Deleting $f"
+            gomplate -f "$f" --datasource env=./environments/{{ .Environment.Name }}/addons.yaml | kubectl delete -f - --ignore-not-found
+          done
+        else
+          echo "This action does not execute hooks. (HELMFILE_COMMAND: $HELMFILE_COMMAND)"
+        fi

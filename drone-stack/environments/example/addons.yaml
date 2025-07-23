@@ -1,0 +1,4 @@
+namespace: ci
+secrets:
+  DOCKER_USERNAME: {{ docker_username }}
+  DOCKER_PASSWORD: {{ docker_password }}

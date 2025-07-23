@@ -1,0 +1,7 @@
+{{- $env := ds "env" }}
+apiVersion: cilium.io/v2alpha1
+kind: CiliumBGPPeerConfig
+metadata:
+  name: cilium-peer
+spec: 
+{{ toYAML $env.bgpPeerConfigSpec | indent 2 }}

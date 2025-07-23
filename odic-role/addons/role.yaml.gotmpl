@@ -1,0 +1,14 @@
+{{- range $user := (ds "env").users }}
+  {{- range $namspace := $user.namespaces }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: oidc
+  namespace: {{ . }}
+rules:
+  - apiGroups: ["*"]
+    resources: ["*"]
+    verbs: ["*"]
+  {{- end }}
+{{- end }}

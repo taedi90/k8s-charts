@@ -1,0 +1,4 @@
+apiVersion: v2
+name: my-gateway-chart
+description: A Helm chart to deploy Gateway and HTTPRoutes
+version: 0.1.0

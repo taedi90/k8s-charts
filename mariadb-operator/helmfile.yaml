@@ -1,0 +1,18 @@
+helmDefaults:
+  skipDeps: true # skip running "helm repo update" and "helm dependency build"
+---
+
+environments:
+  example:
+    values: 
+    - ./environments/example/values.yaml
+
+---
+releases:
+  - name: mariadb-operator
+    namespace: mariadb-operator
+    chart: ./chart
+    historyMax: 3
+    values:
+      - ./chart/values.yaml
+      - ./environments/{{ .Environment.Name }}/values.yaml

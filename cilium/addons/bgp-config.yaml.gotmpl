@@ -1,0 +1,8 @@
+{{- $env := ds "env" }}
+apiVersion: "cilium.io/v2alpha1"
+kind: CiliumLoadBalancerIPPool
+metadata:
+  name: "default-pool"
+spec:
+  blocks:
+    - cidr: "{{ $env.loadBalancerIpPool }}"

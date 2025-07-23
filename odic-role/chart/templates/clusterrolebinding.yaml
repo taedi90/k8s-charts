@@ -1,0 +1,30 @@
+{{- define "slugify" -}}
+{{- regexReplaceAll "[^a-zA-Z0-9]+" . "-" | lower | trimAll "-" -}}
+{{- end }}
+
+{{- range .Values.users }}
+  {{- $user := .name }}
+  {{- $username := regexFind "^[^@]+" $user -}}
+  {{- $slugUser := include "slugify" $username }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  {{- if .admin }}
+  name: oidc:admin:{{ $slugUser }}
+  {{ else }}
+  name: oidc:user:{{ $slugUser }}
+  {{- end }}
+subjects:
+- kind: User
+  name: "{{ $user }}"
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  {{- if .admin }}
+  name: cluster-admin
+  {{ else }}
+  name: oidc
+  {{- end }}
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}

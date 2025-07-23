@@ -1,0 +1,21 @@
+gateway:
+  name: default-gateway
+  namespace: cilium # 비워두면 helm 차트 namespace 로 적용
+  gatewayClassName: cilium
+  addresses:
+  - type: IPAddress
+    value: 10.30.0.1
+
+routes:
+  - name: kubernetes-dashboard
+    namespace: kubernetes-dashboard
+    hostname: "{{ kubernetes_dashboard_host }}"
+    serviceName: kubernetes-dashboard-kong-proxy
+    servicePort: 80
+    pathMatch: /
+    httpEnable: false
+    tls:
+      mode: Terminate
+      issuerRef:
+        name: letsencrypt-staging
+        kind: ClusterIssuer

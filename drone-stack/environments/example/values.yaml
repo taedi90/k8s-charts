@@ -1,0 +1,74 @@
+drone:
+  nameOverride: "core" # server 로 지으면 오류남 (Invalid port configuration.)
+
+  service:
+    type: ClusterIP
+    port: 80
+    annotations: {}
+    nodePort:
+
+  ingress:
+    enabled: false
+
+  resources: {}
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+
+  persistentVolume:
+    enabled: true
+    accessModes:
+      - ReadWriteOnce
+    mountPath: /data
+    size: 8Gi
+
+  env:
+    DRONE_SERVER_HOST: {{ drone_server_host }}
+    DRONE_SERVER_PROTO: https
+
+    DRONE_RPC_SECRET: d23602a37eeccdd992a24780d88458ea
+
+    DRONE_BITBUCKET_CLIENT_ID: {{ drone_bitbucket_client_id }}
+    DRONE_BITBUCKET_CLIENT_SECRET: {{ drone_bitbucket_client_secret }}
+
+    DRONE_USER_CREATE: "username:{{ drone_username }},admin:true"
+
+
+drone-runner-kube:
+  replicaCount: 2
+
+  ## When the runner receives a SIGTERM/SIGINT (config update, upgrade, etc), it will wait until
+  ## all jobs that particular pod has spawned complete. It is for this reason that you'll want
+  ## to make sure that this value is longer than your longest job.
+  terminationGracePeriodSeconds: 3600
+
+  nameOverride: "runner"
+
+  service:
+    type: ClusterIP
+    port: 3000
+
+  ingress:
+    enabled: false
+  
+  resources: {}
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+
+  rbac:
+    buildNamespaces:
+      - ci
+
+  env:
+    DRONE_RPC_HOST: drone-core
+    DRONE_RPC_PROTO: http
+    DRONE_RPC_SECRET: d23602a37eeccdd992a24780d88458ea
+
+    DRONE_NAMESPACE_DEFAULT: ci

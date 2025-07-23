@@ -1,0 +1,82 @@
+expose:
+  type: loadBalancer
+  tls:
+    enabled: false
+  loadBalancer:
+    # The name of LoadBalancer service
+    name: harbor
+    annotations: 
+      io.cilium/lb-ipam-ips: 10.30.0.20
+
+externalURL: {{ harbor_host }}
+
+persistence:
+  enabled: true
+  # Setting it to "keep" to avoid removing PVCs during a helm delete
+  # operation. Leaving it empty will delete PVCs after the chart deleted
+  # (this does not apply for PVCs that are created for internal database
+  # and redis components, i.e. they are never deleted automatically)
+  resourcePolicy: "keep"
+  persistentVolumeClaim:
+    registry:
+      # Use the existing PVC which must be created manually before bound,
+      # and specify the "subPath" if the PVC is shared with other components
+      existingClaim: ""
+      # Specify the "storageClass" used to provision the volume. Or the default
+      # StorageClass will be used (the default).
+      # Set it to "-" to disable dynamic provisioning
+      storageClass: ""
+      subPath: ""
+      accessMode: ReadWriteOnce
+      size: 200Gi
+      annotations: {}
+    jobservice:
+      jobLog:
+        existingClaim: ""
+        storageClass: ""
+        subPath: ""
+        accessMode: ReadWriteOnce
+        size: 1Gi
+        annotations: {}
+    # If external database is used, the following settings for database will
+    # be ignored
+    database:
+      existingClaim: ""
+      storageClass: ""
+      subPath: ""
+      accessMode: ReadWriteOnce
+      size: 10Gi
+      annotations: {}
+    # If external Redis is used, the following settings for Redis will
+    # be ignored
+    redis:
+      existingClaim: ""
+      storageClass: ""
+      subPath: ""
+      accessMode: ReadWriteOnce
+      size: 1Gi
+      annotations: {}
+    trivy:
+      existingClaim: ""
+      storageClass: ""
+      subPath: ""
+      accessMode: ReadWriteOnce
+      size: 5Gi
+      annotations: {}
+
+# The initial password of Harbor admin. Change it from portal after launching Harbor
+# or give an existing secret for it
+# key in secret is given via (default to HARBOR_ADMIN_PASSWORD)
+# existingSecretAdminPassword:
+existingSecretAdminPasswordKey: HARBOR_ADMIN_PASSWORD
+harborAdminPassword: '{{ harbor_admin_password }}'
+
+# registry:
+#   #https://github.com/goharbor/harbor-helm/issues/1520
+#   # If true, the registry returns relative URLs in Location headers. The client is responsible for resolving the correct URL.
+#   relativeurls: true
+
+# The update strategy for deployments with persistent volumes(jobservice, registry): "RollingUpdate" or "Recreate"
+# Set it as "Recreate" when "RWM" for volumes isn't supported
+updateStrategy:
+  type: Recreate

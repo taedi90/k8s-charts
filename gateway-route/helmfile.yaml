@@ -1,0 +1,19 @@
+helmDefaults:
+  skipDeps: true # skip running "helm repo update" and "helm dependency build"
+---
+
+environments:
+  example:
+    values: 
+    - ./environments/example/values.yaml
+
+---
+releases:
+  - name: gateway-route
+    namespace: cilium
+    chart: ./chart
+    historyMax: 3
+    skipDeps: true
+    values:
+      - ./chart/values.yaml
+      - ./environments/{{ .Environment.Name }}/values.yaml

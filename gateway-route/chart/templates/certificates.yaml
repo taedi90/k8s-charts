@@ -1,0 +1,18 @@
+{{- $gatewayNamespace := .Values.gateway.namespace | default .Release.Namespace }}
+{{- range .Values.routes }}
+{{- if .tls }}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ .hostname | replace "." "-" }}-tls
+  namespace: {{ $gatewayNamespace }}
+spec:
+  secretName: {{ .hostname | replace "." "-" }}-tls
+  dnsNames:
+    - {{ .hostname }}
+  issuerRef:
+    name: {{ .tls.issuerRef.name }}
+    kind: {{ .tls.issuerRef.kind }}
+{{- end }}
+{{- end }}

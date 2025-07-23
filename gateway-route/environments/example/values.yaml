@@ -1,0 +1,33 @@
+gateway:
+  name: default-gateway
+  namespace: cilium # 비워두면 helm 차트 namespace 로 적용
+  gatewayClassName: cilium
+  addresses:
+  - type: IPAddress
+    value: 10.30.0.1
+
+routes:
+  - name: kubernetes-dashboard
+    namespace: kubernetes-dashboard
+    hostname: "{{ kubernetes_dashboard_host }}"
+    serviceName: oauth2-proxy #kubernetes-dashboard-kong-proxy
+    servicePort: 80
+    pathMatch: /
+    httpEnable: true # TODO acme 용도로만 쓰거나 리다이렉트 되도록 설정
+    tls:
+      mode: Terminate
+      issuerRef:
+        name: letsencrypt-prod # 테스트용은 letsencrypt-staging
+        kind: ClusterIssuer
+  - name: harbor
+    namespace: harbor
+    hostname: "{{ harbor_host }}"
+    serviceName: harbor
+    servicePort: 80
+    pathMatch: /
+    httpEnable: true # TODO acme 용도로만 쓰거나 리다이렉트 되도록 설정
+    tls:
+      mode: Terminate
+      issuerRef:
+        name: letsencrypt-prod
+        kind: ClusterIssuer

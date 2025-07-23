@@ -1,0 +1,19 @@
+s-charts/NOTICE
+Kubernetes Helm Charts Collection
+Copyright 2025 Taesoo Kim
+
+본 프로젝트는 다음과 같은 서드파티 컴포넌트를 포함하거나 참조합니다:
+
+Apache License 2.0 컴포넌트:
+- Harbor (https://github.com/goharbor/harbor)
+- Cilium (https://github.com/cilium/cilium)
+- cert-manager (https://github.com/cert-manager/cert-manager)
+- PostgreSQL Helm Chart (https://github.com/bitnami/charts)
+- RabbitMQ Helm Chart (https://github.com/bitnami/charts)
+- NGINX Ingress Controller (https://github.com/kubernetes/ingress-nginx)
+
+기타 라이선스:
+- Elastic Operator: Elastic License 2.0 
+  (상업적 사용 제한이 있을 수 있음, 자세한 내용은 elastic-operator/chart/LICENSE 참조)
+
+각 컴포넌트의 원본 라이선스 및 저작권 고지사항을 준수해야 합니다.

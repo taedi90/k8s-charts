@@ -1,0 +1,6 @@
+apiVersion: v2
+name: etcd-backup
+version: 0.1.0
+description: A Helm chart for backing up etcd snapshots on a Kubernetes cluster
+appVersion: "v1"
+type: application

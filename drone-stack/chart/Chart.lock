@@ -1,0 +1,9 @@
+dependencies:
+- name: drone
+  repository: file://charts/drone
+  version: 0.6.5
+- name: drone-runner-kube
+  repository: file://charts/drone-runner-kube
+  version: 0.1.10
+digest: sha256:da70ef51503a4e29fa316ff9a3bf4b04f4012febc60c4d8986fb696a6cad7cd5
+generated: "2025-04-15T16:10:50.052305+09:00"

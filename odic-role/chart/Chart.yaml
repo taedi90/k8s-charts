@@ -1,0 +1,6 @@
+apiVersion: v2
+name: oidc-role
+version: 0.1.0
+description: A Helm chart for managing OIDC roles on a Kubernetes cluster
+appVersion: "v1"
+type: application

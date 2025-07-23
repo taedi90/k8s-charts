@@ -1,0 +1,7 @@
+users:
+  # 예시 사용자
+  - name: "example_user@company.kr"
+    # 어드민 사용자 여부
+    admin: false
+    # 네임스페이스 권한 목록
+    namespaces: [playground, team-dev]

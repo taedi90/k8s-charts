@@ -1,0 +1,140 @@
+# https://docs.cilium.io/en/stable/network/kubernetes/kubeproxy-free/
+kubeProxyReplacement: "true"
+
+# kube-proxy-free 를 위해서는 api server 의 IP 주소를 설정해야 한다.
+k8sServiceHost: "{{ k8s_api_server_ip }}"
+k8sServicePort: "{{ k8s_api_server_port }}"
+
+securityContext:
+  # -- Run the pod with elevated privileges
+  privileged: true
+
+etcd:
+  enabled: false
+
+identityAllocationMode: "crd"
+
+# CiliumBGPPeeringPolicy CRDs.
+bgpControlPlane:
+  # -- Enables the BGP control plane.
+  enabled: true
+  # -- SecretsNamespace is the namespace which BGP support will retrieve secrets from.
+  secretsNamespace:
+    # -- Create secrets namespace for BGP secrets.
+    create: true
+    # -- The name of the secret namespace to which Cilium agents are given read access
+    name: cilium-secrets
+
+bpf:
+  lbExternalClusterIP: true     # ClusterIP 접근 허용 (외부에서)
+  masquerade: true # 클라이언트 IP 보존을 위해 SNAT 생략
+  # 부하 분산 알고리즘을 서비스마다 다르게 지정할 수 있도록 허용할지 여부.
+  lbAlgorithmAnnotation: true
+
+cni:
+  chainingMode: none
+  # multus 를 사용하기 위해서는 이 옵션을 false 로 설정해야 한다.
+  exclusive: false
+
+operator:
+  annotations:
+    # prometheus 자동 스크래핑을 위한 주석
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9963"
+  prometheus:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+
+hubble:
+  enabled: true
+  metrics:
+    enabled: 
+      - dns:query;ignoreAAAA
+      - drop
+      - tcp
+      - flow
+      - port-distribution
+      - icmp
+      - "httpV2:exemplars=true;labelsContext=source_ip,source_namespace,source_workload,destination_ip,destination_namespace,destination_workload,traffic_direction;sourceContext=workload-name|reserved-identity;destinationContext=workload-name|reserved-identity"
+    # OpenMetrics 표준 메트릭을 사용하여 Hubble 메트릭을 노출
+    enableOpenMetrics: true
+  
+  relay:
+    enabled: true
+    annotations:
+      # prometheus 자동 스크래핑을 위한 주석
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9966"
+    prometheus:
+      enabled: true
+      serviceMonitor:
+        enabled: true
+
+  ui:
+    enabled: true
+
+  eventBufferCapacity: "16383"
+
+ipam:
+  operator:
+    clusterPoolIPv4PodCIDRList: ["10.10.0.0/16"]
+    clusterPoolIPv4MaskSize: 22
+
+enableIPv4Masquerade: true
+enableIPv6Masquerade: true
+
+ipv4NativeRoutingCIDR: "10.10.0.0/16"
+
+loadBalancer:
+  mode: snat
+
+envoy:
+  enabled: true
+
+routingMode: "native"
+
+# -- Configure the underlying network MTU to overwrite auto-detected MTU.
+# This value doesn't change the host network interface MTU i.e. eth0 or ens0.
+# It changes the MTU for cilium_net@cilium_host, cilium_host@cilium_net,
+# cilium_vxlan and lxc_health interfaces.
+MTU: 1500
+
+nodePort:
+  enabled: true # 노드 포트 허용 필요
+
+socketLB:
+  enabled: true  # NodePort 트래픽 처리 활성화
+  hostNamespaceOnly: true  # Host의 socket 연결만 BPF 처리
+
+externalIPs:
+  enabled: true # ExternalIP 지원
+
+hostPort:
+  enabled: true  # HostPort 트래픽 처리 활성화
+
+gatewayAPI:
+  enabled: true
+  gatewayClass:
+    create: "true"
+  # Local - 클러스터 외부로부터 들어오는 요청이 실제로 Gateway Pod가 있는 노드에서만 처리 (클라이언트의 실제 IP 주소를 유지)
+  externalTrafficPolicy: Cluster
+  secretsNamespace:
+    create: true
+    name: cilium-secrets
+    sync: true
+
+extraConfig:
+  auto-direct-node-routes: "true" # 직접 노드 경로 활성화 (non-overlay)
+  enable-host-legacy-routing: "false"
+  direct-routing-skip-unreachable: "true" # 직접 라우팅을 위한 비활성화된 경로 건너뛰기
+
+prometheus: 
+  enabled: true
+  serviceMonitor:
+    enabled: true
+
+annotations:
+  # prometheus 자동 스크래핑을 위한 주석
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "9962"

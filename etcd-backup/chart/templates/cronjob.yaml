@@ -1,0 +1,95 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "etcd-backup.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  schedule: "{{ .Values.schedule }}"
+  timeZone: "{{ .Values.timeZone }}"
+  successfulJobsHistoryLimit: {{ .Values.succesfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.failedJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          {{- if .Values.affinity }}
+          affinity:
+{{ toYaml .Values.affinity | indent 12 }}
+          {{- end }}
+          nodeSelector:
+            node-role.kubernetes.io/control-plane: ""
+          tolerations:
+            - key: "node-role.kubernetes.io/control-plane"
+              operator: "Exists"
+              effect: "NoSchedule"
+          hostNetwork: true
+          dnsPolicy: ClusterFirst
+          initContainers:
+            - name: etcd-backup
+              image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              securityContext:
+                runAsUser: 0
+                runAsGroup: 0
+                allowPrivilegeEscalation: false
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+                  BACKUP_DIR="/backup/host"
+                  SNAPSHOT_FILE="etcd-snapshot-${DATE}.db"
+                  ARCHIVE_FILE="${SNAPSHOT_FILE}.gz"
+
+                  etcdctl \
+                    --endpoints={{ .Values.etcd.endpoints }} \
+                    --cacert={{ .Values.etcd.certs.ca }} \
+                    --cert={{ .Values.etcd.certs.cert }} \
+                    --key={{ .Values.etcd.certs.key }} \
+                    snapshot save "${BACKUP_DIR}/${SNAPSHOT_FILE}"
+              volumeMounts:
+                - name: etcd-backup
+                  mountPath: /backup/host
+                - name: etcd-certs
+                  mountPath: {{ .Values.etcd.certs.mountPath }}
+                  readOnly: true
+          containers:
+            - name: backup-purge
+              image: busybox:latest
+              imagePullPolicy: IfNotPresent
+              volumeMounts:
+                - name: etcd-backup
+                  mountPath: /backup/host
+                {{- if .Values.secondBackup.enabled }}
+                - name: second-backup
+                  mountPath: /backup/persist
+                  {{- if .Values.secondBackup.subPath }}
+                  subPath: {{ .Values.secondBackup.subPath }}
+                  {{- end }}
+                {{- end }}
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  {{- if .Values.secondBackup.enabled }}
+                  cp -u /backup/host/*.db /backup/persist/
+                  {{- end }}
+                  find /backup/host -type f -mtime +{{ .Values.backup.retentionDays }} -name '*.db' -exec rm -- '{}' \;
+                  {{- if .Values.secondBackup.enabled }}
+                  find /backup/persist -type f -mtime +{{ .Values.backup.retentionDays }} -name '*.db' -exec rm -- '{}' \;
+                  {{- end }}
+
+          volumes:
+            - name: etcd-backup
+              hostPath:
+                path: {{ .Values.backup.hostPath }}
+            - name: etcd-certs
+              hostPath:
+                path: {{ .Values.etcd.certs.hostPath }}
+                type: Directory
+            {{- if .Values.secondBackup.enabled }}
+            - name: second-backup
+              persistentVolumeClaim:
+                claimName: {{ if .Values.secondBackup.existingClaim }}{{ .Values.secondBackup.existingClaim }}{{ else }}etcd-backup-pvc{{ end }}
+            {{- end }}

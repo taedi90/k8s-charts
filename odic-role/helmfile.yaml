@@ -1,0 +1,63 @@
+helmDefaults:
+  skipDeps: true # skip running "helm repo update" and "helm dependency build"
+---
+
+environments:
+  example:
+    values: 
+    - ./environments/example/values.yaml
+
+---
+releases:
+  - name: oidc-role
+    namespace: kube-system
+    chart: ./chart
+    historyMax: 3
+    values:
+      - ./chart/values.yaml
+      - ./environments/{{ .Environment.Name }}/values.yaml
+    
+    hooks:
+      - events: ["presync"]
+        showlogs: true
+        command: "bash"
+        args:
+          - "-c"
+          - |
+            echo "Generating namespaces from values.yaml..."
+            ns_list=$(yq e '.users[].namespaces[]' ./environments/{{ .Environment.Name }}/values.yaml | sort | uniq)
+            for ns in $ns_list; do
+              if ! kubectl get ns "$ns" >/dev/null 2>&1; then
+                echo "Creating namespace: $ns"
+                kubectl create ns "$ns"
+              else
+                echo "Namespace already exists: $ns"
+              fi
+            done
+            # 설치
+            if [ "$HELMFILE_COMMAND" = "sync" ] || [ "$HELMFILE_COMMAND" = "apply" ]; then
+              echo "Rendering & Applying addons for env: {{ .Environment.Name }}"
+              find ./addons -type f \( -name '*.gotmpl' -o -name '*.yaml.gotmpl' \) | while read f; do
+                echo "Applying $f"
+                gomplate -f "$f" --datasource env=./environments/{{ .Environment.Name }}/values.yaml | kubectl apply -f -
+              done
+            fi
+
+
+hooks:
+  - events: ["cleanup"]
+    showlogs: true
+    command: sh
+    args:
+      - -c
+      - |
+        # 삭제 작업 이후 동작
+        if [ "$HELMFILE_COMMAND" = "destroy" ]; then
+          echo "Deleting addons for env: {{ .Environment.Name }}"
+          find ./addons -type f \( -name '*.gotmpl' -o -name '*.yaml.gotmpl' \) | while read f; do
+            echo "Deleting $f"
+            gomplate -f "$f" --datasource env=./environments/{{ .Environment.Name }}/values.yaml | kubectl delete -f - --ignore-not-found
+          done
+        else
+          echo "This action does not execute hooks. (HELMFILE_COMMAND: $HELMFILE_COMMAND)"
+        fi
